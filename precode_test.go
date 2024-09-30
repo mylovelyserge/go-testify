@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMainHandlerValidRequest(t *testing.T) {
@@ -19,8 +20,13 @@ func TestMainHandlerValidRequest(t *testing.T) {
 	handler := http.HandlerFunc(mainHandle)
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.NotEmpty(t, rr.Body.String())
+	require.Equal(t, http.StatusOK, rr.Code)
+	require.NotEmpty(t, rr.Body.String())
+
+	cafes := strings.Split(rr.Body.String(), ",")
+	require.Len(t, cafes, 2)
+	assert.Contains(t, cafes, "Мир кофе")
+	assert.Contains(t, cafes, "Сладкоежка")
 }
 
 func TestMainHandlerInvalidCity(t *testing.T) {
@@ -33,8 +39,8 @@ func TestMainHandlerInvalidCity(t *testing.T) {
 	handler := http.HandlerFunc(mainHandle)
 	handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Equal(t, "wrong city value", rr.Body.String())
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	require.Equal(t, "wrong city value", rr.Body.String())
 }
 
 func TestMainHandlerWhenCountMoreThanTotal(t *testing.T) {
@@ -47,9 +53,12 @@ func TestMainHandlerWhenCountMoreThanTotal(t *testing.T) {
 	handler := http.HandlerFunc(mainHandle)
 	handler.ServeHTTP(rr, req)
 
-	totalCount := len(cafeList["moscow"])
-	expectedBody := strings.Join(cafeList["moscow"][:totalCount], ",")
+	require.Equal(t, http.StatusOK, rr.Code)
 
-	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, expectedBody, rr.Body.String())
+	cafes := strings.Split(rr.Body.String(), ",")
+	require.Len(t, cafes, len(cafeList["moscow"]))
+
+	for _, cafe := range cafeList["moscow"] {
+		assert.Contains(t, cafes, cafe)
+	}
 }
